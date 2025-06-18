@@ -2,3 +2,7 @@
 /mcp-client/.idea/
 /mcp-client/build/
 /.idea/
+
+/mcp-server/.gradle/
+/mcp-server/.idea/
+/mcp-server/build/

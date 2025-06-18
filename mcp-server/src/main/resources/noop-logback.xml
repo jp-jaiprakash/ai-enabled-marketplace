@@ -1,0 +1,3 @@
+<configuration>
+    <!-- Intentionally empty to disable all logback output -->
+</configuration>
