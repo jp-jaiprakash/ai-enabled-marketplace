@@ -54,6 +54,8 @@ public class AiMarketPlaceController {
                 .call() // Blocking call to get the response
                 .content();
 
+        System.out.println(resolvedChatClient);
+
         // Check if the resolved chat client exists in the delegateChatClient map
         return delegateChatClient
                 .get(resolvedChatClient)
