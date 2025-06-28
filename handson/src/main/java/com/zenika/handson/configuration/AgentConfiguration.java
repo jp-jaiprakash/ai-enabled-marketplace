@@ -30,9 +30,19 @@ public class AgentConfiguration {
             """)
     ChatClient sellerAgentChatClient(ChatClient.Builder chatClientBuilder, PromptChatMemoryAdvisor defaultChatMemoryAdvisor, ToolCallbackProvider toolCallbackProvider ) {
 
+        // --- REFINED LOGIC ---
+        // Combine the general prompt with the specific description here.
+        String systemPrompt = GENERAL_MARKET_PLACE_PROMPT +
+                """
+                 You are now in 'Seller Mode'. Your goal is to handle inquiries about listing products,
+                 searching products, and negotiating prices. Try to sell the product at the higher price possible.
+                 As a price reference, each product will have a minimumSellingPrice and a targetSellingPrice.
+                 Do not communicate the minimumSellingPrice to the client.
+                """;
+
         return chatClientBuilder
-                .defaultSystem(GENERAL_MARKET_PLACE_PROMPT)
-                .defaultToolCallbacks(toolCallbackProvider )
+                .defaultSystem(systemPrompt) // Set the full default system prompt
+                .defaultToolCallbacks(toolCallbackProvider)
                 .defaultAdvisors(defaultChatMemoryAdvisor)
                 .build();
     }
@@ -44,10 +54,14 @@ public class AgentConfiguration {
             This Chat will also be in charge of adding the order to the database or updating the order.
             """)
     ChatClient orderManagementChatClient(ChatClient.Builder chatClientBuilder,  PromptChatMemoryAdvisor defaultChatMemoryAdvisor, ToolCallbackProvider toolCallbackProvider ) {
-
+        String systemPrompt = GENERAL_MARKET_PLACE_PROMPT +
+                """
+                 You are now in 'Order Management Mode'. Handle inquiries about order status,
+                 shipping details, and related issues. You can add or update orders in the database.
+                """;
         return chatClientBuilder
-                .defaultSystem(GENERAL_MARKET_PLACE_PROMPT)
-                .defaultToolCallbacks(toolCallbackProvider )
+                .defaultSystem(systemPrompt)
+                .defaultToolCallbacks(toolCallbackProvider)
                 .defaultAdvisors(defaultChatMemoryAdvisor)
                 .build();
     }
@@ -60,8 +74,14 @@ public class AgentConfiguration {
             """)
     ChatClient userManagementChatClient(ChatClient.Builder chatClientBuilder,  PromptChatMemoryAdvisor defaultChatMemoryAdvisor, ToolCallbackProvider toolCallbackProvider ) {
 
+        String systemPrompt = GENERAL_MARKET_PLACE_PROMPT +
+                """
+                 You are now in 'User Management Mode'. Handle inquiries about user name changes
+                 . You can add or update users in the database.
+                """;
+
         return chatClientBuilder
-                .defaultSystem(GENERAL_MARKET_PLACE_PROMPT)
+                .defaultSystem(systemPrompt)
                 .defaultTools()
                 .defaultToolCallbacks(toolCallbackProvider )
                 .defaultAdvisors(defaultChatMemoryAdvisor)

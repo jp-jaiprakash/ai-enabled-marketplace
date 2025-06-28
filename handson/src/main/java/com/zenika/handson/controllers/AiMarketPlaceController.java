@@ -8,6 +8,11 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 import static com.zenika.handson.constant.PromptContants.GENERAL_MARKET_PLACE_PROMPT;
+
+
+record ChatRequest(String message, String user) {}
+record ChatResponse(String response) {}
+
 @RestController
 @RequestMapping("/api/marketplace")
 public class AiMarketPlaceController {
@@ -44,27 +49,26 @@ public class AiMarketPlaceController {
     }
 
 
-    @GetMapping("/{user}/inquire")
-    public String userInquire(@PathVariable String user, @RequestParam String inquiry) {
-
-        // Resolve the chat client based on the inquiry using the router chat client
+    @CrossOrigin(origins = {"http://localhost:3000", "http://127.0.0.1:3000"})
+    @PostMapping("/chat")
+    public ChatResponse generate(@RequestBody ChatRequest chatRequest) {
         var resolvedChatClient = this.routerChatClient
                 .prompt()
-                .user(inquiry)
-                .call() // Blocking call to get the response
+                .user(chatRequest.message())
+                .call()
                 .content();
 
         System.out.println(resolvedChatClient);
 
-        // Check if the resolved chat client exists in the delegateChatClient map
-        return delegateChatClient
+        String response =  delegateChatClient
                 .get(resolvedChatClient)
                 .prompt()
-                .user(inquiry)
-                .system(GENERAL_MARKET_PLACE_PROMPT + getBeanDefinitionDescription(resolvedChatClient))
-                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, user))
+                .user(chatRequest.message())
+                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, chatRequest.user()))
                 .call()
                 .content();
+
+        return new ChatResponse(response);
     }
 
     /**
