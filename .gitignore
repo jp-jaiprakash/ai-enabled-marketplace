@@ -6,3 +6,5 @@
 /mcp-server/.gradle/
 /mcp-server/.idea/
 /mcp-server/build/
+/mcp_server/target/
+/mcp_server/.idea/
