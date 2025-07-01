@@ -1,6 +1,7 @@
 package com.zenika.handson.configuration;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.PromptChatMemoryAdvisor;
+import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.context.annotation.Bean;
@@ -12,47 +13,54 @@ import static com.zenika.handson.constant.PromptContants.GENERAL_MARKET_PLACE_PR
 @Configuration
 public class AgentConfiguration {
 
+    /**
+     * This bean provides a default ChatMemoryAdvisor that will be used by all the ChatClients.
+     * It is used to store the conversation history and provide context to the chat clients.
+     *
+     * @param chatMemory The ChatMemory instance to be used by the advisor.
+     * @return A PromptChatMemoryAdvisor instance configured with the provided ChatMemory.
+     */
     @Bean
     PromptChatMemoryAdvisor defaultChatMemoryAdvisor(ChatMemory chatMemory) {
-        // Create a PromptChatMemoryAdvisor instance using the ChatMemory
-        return PromptChatMemoryAdvisor.builder(chatMemory).build();
+        return PromptChatMemoryAdvisor.builder(chatMemory).order(1).build();
     }
 
+    /**
+     * This bean provides a default ToolCallbackProvider that will be used by all the ChatClients.
+     * It is used to provide the tools that the chat clients can use to answer the user inquiries.
+     *
+     * @return A ToolCallbackProvider instance configured with the default tools.
+     */
     @Bean
     @Description("""
         This Chat should be use to handle inquiries about listing products,
-         searching products, negotiating prices, reply to the Platform Terms and Conditions
+         searching products, negotiating prices
          and settling the deal at a specific price with the client.
-         During the negotiation this Chat should try to sell the product at the higher price possible
-         by using any mean to charm the client. As a price reference, each product will have a minimumSellingPrice and a
-         targetSellingPrice field used to determine the minimum and target price for the negotiation. If user starts negotiating then dont show minimumSellingPrice at once.
-         Negotiation should be done in a friendly manner, and the agent should try to charm the client.
-        """)
-    ChatClient sellerAgentChatClient(ChatClient.Builder chatClientBuilder, PromptChatMemoryAdvisor defaultChatMemoryAdvisor, ToolCallbackProvider toolCallbackProvider ) {
-
-        // --- REFINED NEGOTIATION PROMPT ---
-        String systemPrompt = GENERAL_MARKET_PLACE_PROMPT +
-                """
-                 You are now in 'Seller Mode', and you are a master salesperson at ZeniMarket.
-                 Your primary goal is to negotiate the highest possible price for a product, aiming for the 'targetSellingPrice'.
-    
-                 Follow this specific negotiation strategy:
+         Follow this specific negotiation strategy:
                  1.  **Starting Offer:** Always start your negotiation with an offer that is close to the 'targetSellingPrice'.
                  2.  **Handle Counter-Offers:** When a user makes a counter-offer, do not immediately accept it or jump to your lowest price.
                  3.  **Gradual Concessions:** Instead, aim for at least **two to three rounds of negotiation**. For each round, make a small concession, moving your offer slightly lower towards the user's price.
                  4.  **Charm and Justify:** With each new counter-offer you make, you must 'charm the client' by justifying the price. Highlight a specific, valuable feature of the product. For example, "I can't quite do $850, but I can meet you at $920. At that price, you're getting the state-of-the-art processor which makes it a fantastic deal."
                  5.  **Know Your Limit:** Your absolute floor is the 'minimumSellingPrice'. Under no circumstances should you offer or accept a price below this value. Never reveal the 'minimumSellingPrice' to the user.
-    
-                 Be friendly, engaging, and persuasive throughout the conversation.
-                """;
-
+                 6.  **Negotiation should be done in a friendly manner, and the agent should try to charm the client.
+        """)
+    ChatClient sellerAgentChatClient(ChatClient.Builder chatClientBuilder, PromptChatMemoryAdvisor defaultChatMemoryAdvisor, ToolCallbackProvider toolCallbackProvider ) {
         return chatClientBuilder
-                .defaultSystem(systemPrompt)
+                .defaultSystem(GENERAL_MARKET_PLACE_PROMPT)
                 .defaultToolCallbacks(toolCallbackProvider)
                 .defaultAdvisors(defaultChatMemoryAdvisor)
                 .build();
     }
-
+    /**
+     * This bean provides a ChatClient that will be used to handle inquiries about orders management.
+     * It is used to handle inquiries about order status, shipping details, and any issues related to the order.
+     * It will also be in charge of adding the order to the database or updating the order.
+     *
+     * @param chatClientBuilder The ChatClient.Builder instance to build the ChatClient.
+     * @param defaultChatMemoryAdvisor The default ChatMemoryAdvisor to be used by the ChatClient.
+     * @param toolCallbackProvider The ToolCallbackProvider to provide tools for the ChatClient.
+     * @return A ChatClient instance configured for order management.
+     */
     @Bean
     @Description("""
             This Chat should be use to handle orders management only after the deal is settled at a agreed price for a product.
@@ -60,66 +68,56 @@ public class AgentConfiguration {
             This Chat will also be in charge of adding the order to the database or updating the order.
             """)
     ChatClient orderManagementChatClient(ChatClient.Builder chatClientBuilder,  PromptChatMemoryAdvisor defaultChatMemoryAdvisor, ToolCallbackProvider toolCallbackProvider ) {
-        String systemPrompt = GENERAL_MARKET_PLACE_PROMPT +
-                """
-                 You are now in 'Order Management Mode'. Handle inquiries about order status,
-                 shipping details, and related issues. You can add or update orders in the database.
-                """;
         return chatClientBuilder
-                .defaultSystem(systemPrompt)
+                .defaultSystem(GENERAL_MARKET_PLACE_PROMPT)
                 .defaultToolCallbacks(toolCallbackProvider)
                 .defaultAdvisors(defaultChatMemoryAdvisor)
                 .build();
     }
 
+    /**
+     * This bean provides a ChatClient that will be used to handle inquiries about user management.
+     * It is used to handle inquiries about creating a new user, updating an existing user.
+     * It will also be in charge of adding the new user to the database or updating the user information.
+     *
+     * @param chatClientBuilder The ChatClient.Builder instance to build the ChatClient.
+     * @param defaultChatMemoryAdvisor The default ChatMemoryAdvisor to be used by the ChatClient.
+     * @param toolCallbackProvider The ToolCallbackProvider to provide tools for the ChatClient.
+     * @return A ChatClient instance configured for user management.
+     */
     @Bean
     @Description("""
             This Chat should be use to handle User management.
             This Chat should be able to handle inquiries about creating a new user, updating an existing user.
-            This Chat will also be in charge of adding the new user to the database or updating the user information.
+            This Chat can add or update users in the database.Validate if user exists in database by given id
             """)
     ChatClient userManagementChatClient(ChatClient.Builder chatClientBuilder,  PromptChatMemoryAdvisor defaultChatMemoryAdvisor, ToolCallbackProvider toolCallbackProvider ) {
-
-        String systemPrompt = GENERAL_MARKET_PLACE_PROMPT +
-                """
-                 You are now in 'User Management Mode'. Handle inquiries about user name changes
-                 . You can add or update users in the database.Validate if user exists in database by given id
-                """;
-
+        // --- USER MANAGEMENT PROMPT ---
         return chatClientBuilder
-                .defaultSystem(systemPrompt)
+                .defaultSystem(GENERAL_MARKET_PLACE_PROMPT)
                 .defaultTools()
                 .defaultToolCallbacks(toolCallbackProvider )
                 .defaultAdvisors(defaultChatMemoryAdvisor)
                 .build();
     }
+    /**
+     * This bean provides a ChatClient that will be used to handle inquiries about the terms and conditions of the marketplace.
+     * It is used to handle inquiries about the marketplace policies, user agreements, and any legal information.
+     *
+     * @param chatClientBuilder The ChatClient.Builder instance to build the ChatClient.
+     * @param defaultChatMemoryAdvisor The default ChatMemoryAdvisor to be used by the ChatClient.
+     * @param advisor The QuestionAnswerAdvisor to provide answers to questions related to terms and conditions.
+     * @return A ChatClient instance configured for terms and conditions inquiries.
+     */
+    @Bean
+    @Description("This Chat should be use answer all the term and conditions related inquiries.")
+    ChatClient termAndConditionChatClient(ChatClient.Builder chatClientBuilder, PromptChatMemoryAdvisor defaultChatMemoryAdvisor, QuestionAnswerAdvisor advisor ) {
+        return chatClientBuilder
+                .defaultSystem(GENERAL_MARKET_PLACE_PROMPT)
+                .defaultTools()
+                .defaultAdvisors(defaultChatMemoryAdvisor, advisor)
+                .build();
+    }
 
 
 }
-
-/**
- * The issue in v1 was not memory issue, but rather the fact that the it's a logical flaw in how the conversation is handed off between your different AI agents.
- *
- * The "Why": The Agent Switch
- * The problem happens right here:
- *
- * User: "last name is prakash and customer number 5"
- *
- * AI: "Hello Jai Prakash! Thank you... How can I assist you today with your account or user name changes?"
- *
- * This response strongly suggests that your routerChatClient interpreted the mention of "last name" and "customer number" as a user management task and delegated the conversation to the userManagementChatClient. At this point, this agent has your details.
- *
- * User: "no i want to see all the available items"
- *
- * AI: "Hello Jai Prakash! Before I list all the available items for you, could you please confirm your last name and customer number?"
- *
- * When you changed your intent, the routerChatClient correctly re-evaluated the new prompt. It saw "available items" and handed the conversation off to a different agent: the sellerAgentChatClient.
- *
- * This is the root cause. Even though both agents share the same underlying ChatMemory (which is why it remembers your first name, "Jai Prakash"), the sellerAgentChatClient is essentially "waking up" for the first time. Its primary instruction, coming from GENERAL_MARKET_PLACE_PROMPT, is to always ask for the user's details.
- *
- * Think of it like talking to two different customer service representatives in a call center. You give your details to the first person (User Management). When you ask about products, they transfer you to a new person in the Sales department. That new representative, following their own standard protocol, starts by asking for your details again to verify who they're talking to.
-
- * Solution: Make the Prompt More Intelligent
- * The simplest and most effective solution is to change the core instruction. Instead of telling the AI to blindly ask for information, you should instruct it to ensure it has the information, checking the history first.
-
- */

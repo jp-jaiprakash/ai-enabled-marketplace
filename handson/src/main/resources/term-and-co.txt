@@ -1,0 +1,73 @@
+**Terms and Conditions**
+
+
+Welcome to ZeniMarketPlace ("we," "us," or "our"). These Terms and Conditions ("Terms") govern your access to and use of our AI Agent Marketplace, including our website, mobile application, APIs, and any services (collectively, the "Marketplace"). By accessing or using the Marketplace, you agree to comply with and be bound by these Terms. If you do not agree with any part of these Terms, please do not use the Marketplace.
+
+---
+
+**1. Eligibility**
+1.1 You must be at least 18 years of age or the age of majority in your jurisdiction to access or use the Marketplace.
+1.2 By using the Marketplace, you represent and warrant that you have the legal capacity and authority to enter into a binding agreement.
+
+**2. Account Registration**
+2.1 To access certain features, you may be required to create an account and provide accurate and complete information.
+2.2 You are solely responsible for maintaining the confidentiality of your account credentials.
+2.3 You agree to notify us immediately of any unauthorized use of your account.
+
+**3. Use of the Marketplace**
+3.1 You may use the Marketplace to browse, purchase, or offer AI agents, tools, or related services.
+3.2 You agree not to use the Marketplace for any illegal or unauthorized purpose.
+3.3 We reserve the right to suspend or terminate accounts that violate these Terms or applicable laws.
+
+**4. Seller Obligations**
+4.1 Sellers must accurately describe their AI products and services.
+4.2 Sellers are responsible for ensuring that their AI agents comply with all relevant laws and regulations.
+4.3 Sellers must not misrepresent the capabilities, security, or limitations of their AI agents.
+
+**5. Buyer Obligations**
+5.1 Buyers agree to use purchased AI agents only in accordance with the applicable license and Terms.
+5.2 Buyers are responsible for verifying that the AI agent meets their requirements before purchase.
+5.3 Buyers may not reverse engineer, decompile, or otherwise misuse any AI agents obtained through the Marketplace.
+
+**6. Payments and Fees**
+6.1 We use third-party payment processors to handle transactions.
+6.2 Sellers may be charged a commission fee per successful transaction.
+6.3 All fees are non-refundable unless otherwise stated.
+
+**7. Intellectual Property**
+7.1 All content and software available on the Marketplace are protected by copyright, trademark, and other laws.
+7.2 Sellers retain ownership of their AI products but grant the Marketplace a limited license to host and display listings.
+7.3 You may not reproduce, distribute, or create derivative works without express permission.
+
+**8. Dispute Resolution**
+8.1 We encourage users to resolve disputes amicably via our support team.
+8.2 We are not responsible for disputes between buyers and sellers but may assist in mediation.
+8.3 You agree to submit unresolved disputes to binding arbitration in \[Jurisdiction].
+
+**9. Termination**
+9.1 We may terminate or suspend your account at any time for violations of these Terms.
+9.2 Upon termination, your right to access the Marketplace ceases immediately.
+9.3 Provisions that by their nature should survive termination (e.g., IP, disclaimers) will remain in effect.
+
+**10. Disclaimers and Limitation of Liability**
+10.1 The Marketplace is provided "as is" without warranties of any kind.
+10.2 We do not guarantee that AI agents will function without error or that the Marketplace will be secure.
+10.3 In no event shall we be liable for indirect, incidental, or consequential damages arising from your use of the Marketplace.
+
+**11. Privacy**
+11.1 Our collection and use of personal data is governed by our Privacy Policy.
+11.2 By using the Marketplace, you consent to the collection and use of your data as described.
+
+**12. Modifications to Terms**
+12.1 We reserve the right to update or modify these Terms at any time.
+12.2 Continued use of the Marketplace after changes constitutes acceptance of the new Terms.
+
+**13. Governing Law**
+13.1 These Terms are governed by the laws of \[Jurisdiction], without regard to conflict of law principles.
+
+**14. Contact Us**
+14.1 For questions about these Terms, contact us at \[Contact Email].
+
+---
+
+Thank you for using ZeniMarketPlace. We look forward to supporting your AI innovations.
