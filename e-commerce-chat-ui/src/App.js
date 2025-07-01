@@ -43,12 +43,14 @@ export default function App() {
 
     try {
       // API call to our Spring Boot backend.
-      const response = await fetch('http://localhost:8080/api/marketplace/chat', {
+      // NOTE: For this to work in development, you need to set up a proxy in package.json
+      // or ensure CORS is handled by the backend (which we did with @CrossOrigin).
+      const response = await fetch('http://localhost:8080/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message: inputValue, user: 'jai' }), // Sending the user's message.
+        body: JSON.stringify({ message: inputValue }),
       });
 
       if (!response.ok) {
@@ -74,6 +76,7 @@ export default function App() {
     // Main container with a light gray background, centering the chat window.
     
     <div className="bg-gray-100 font-sans h-screen flex justify-center items-center p-4">
+      <div className="bg-red-500 text-white p-10 text-3xl">Tailwind is working!</div>
       <div className="w-full max-w-2xl h-[95vh] flex flex-col bg-white rounded-2xl shadow-2xl">
         {/* Chat Header */}
         <div className="bg-blue-600 text-white p-4 rounded-t-2xl shadow-md flex items-center">
