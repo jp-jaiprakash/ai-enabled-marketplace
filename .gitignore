@@ -8,3 +8,9 @@
 /mcp-server/build/
 /mcp_server/target/
 /mcp_server/.idea/
+/e-commerce-chat-ui/.idea/.gitignore
+/e-commerce-chat-ui/.idea/e-commerce-chat-ui.iml
+/e-commerce-chat-ui/.idea/misc.xml
+/e-commerce-chat-ui/.idea/modules.xml
+/e-commerce-chat-ui/.idea/inspectionProfiles/Project_Default.xml
+/e-commerce-chat-ui/.idea/vcs.xml
