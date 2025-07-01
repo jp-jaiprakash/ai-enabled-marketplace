@@ -20,27 +20,34 @@ public class AgentConfiguration {
 
     @Bean
     @Description("""
-            This Chat should be use to handle inquiries about listing products,
-             searching products, negotiating prices, reply to the Platform Terms and Conditions
-             and settling the deal at a specific price with the client.
-             During the negotiation this Chat should try to sell the product at the higher price possible
-             by using any mean to charm the client. As a price reference, each product will have a minimumSellingPrice and a
-             targetSellingPrice field used to determine the minimum and target price for the negotiation. If user starts negotiating then dont show minimumSellingPrice at once.
-             Negotiation should be done in a friendly manner, and the agent should try to charm the client.
-            """)
+        This Chat should be use to handle inquiries about listing products,
+         searching products, negotiating prices, reply to the Platform Terms and Conditions
+         and settling the deal at a specific price with the client.
+         During the negotiation this Chat should try to sell the product at the higher price possible
+         by using any mean to charm the client. As a price reference, each product will have a minimumSellingPrice and a
+         targetSellingPrice field used to determine the minimum and target price for the negotiation. If user starts negotiating then dont show minimumSellingPrice at once.
+         Negotiation should be done in a friendly manner, and the agent should try to charm the client.
+        """)
     ChatClient sellerAgentChatClient(ChatClient.Builder chatClientBuilder, PromptChatMemoryAdvisor defaultChatMemoryAdvisor, ToolCallbackProvider toolCallbackProvider ) {
 
-
+        // --- REFINED NEGOTIATION PROMPT ---
         String systemPrompt = GENERAL_MARKET_PLACE_PROMPT +
                 """
-                 You are now in 'Seller Mode'. Your goal is to handle inquiries about listing products,
-                 searching products, and negotiating prices. Try to sell the product at the higher price possible.
-                 As a price reference, each product will have a minimumSellingPrice and a targetSellingPrice.
-                 Do not communicate the minimumSellingPrice to the client.
+                 You are now in 'Seller Mode', and you are a master salesperson at ZeniMarket.
+                 Your primary goal is to negotiate the highest possible price for a product, aiming for the 'targetSellingPrice'.
+    
+                 Follow this specific negotiation strategy:
+                 1.  **Starting Offer:** Always start your negotiation with an offer that is close to the 'targetSellingPrice'.
+                 2.  **Handle Counter-Offers:** When a user makes a counter-offer, do not immediately accept it or jump to your lowest price.
+                 3.  **Gradual Concessions:** Instead, aim for at least **two to three rounds of negotiation**. For each round, make a small concession, moving your offer slightly lower towards the user's price.
+                 4.  **Charm and Justify:** With each new counter-offer you make, you must 'charm the client' by justifying the price. Highlight a specific, valuable feature of the product. For example, "I can't quite do $850, but I can meet you at $920. At that price, you're getting the state-of-the-art processor which makes it a fantastic deal."
+                 5.  **Know Your Limit:** Your absolute floor is the 'minimumSellingPrice'. Under no circumstances should you offer or accept a price below this value. Never reveal the 'minimumSellingPrice' to the user.
+    
+                 Be friendly, engaging, and persuasive throughout the conversation.
                 """;
 
         return chatClientBuilder
-                .defaultSystem(systemPrompt) // Set the full default system prompt
+                .defaultSystem(systemPrompt)
                 .defaultToolCallbacks(toolCallbackProvider)
                 .defaultAdvisors(defaultChatMemoryAdvisor)
                 .build();
@@ -76,7 +83,7 @@ public class AgentConfiguration {
         String systemPrompt = GENERAL_MARKET_PLACE_PROMPT +
                 """
                  You are now in 'User Management Mode'. Handle inquiries about user name changes
-                 . You can add or update users in the database.
+                 . You can add or update users in the database.Validate if user exists in database by given id
                 """;
 
         return chatClientBuilder
