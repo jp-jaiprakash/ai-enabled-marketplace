@@ -30,10 +30,10 @@ public class AgentService {
         this.promptBeanService = promptBeanService;
 
         // Build the system prompt for the router chat client
-        String systemPrompt = ROUTER_PROMPT + this.promptBeanService.getAllBeansDefinitionDescriptions(this.chatClientMap.keySet());
+        String systemRouterPrompt = ROUTER_PROMPT + this.promptBeanService.getAllBeansDefinitionDescriptions(this.chatClientMap.keySet());
 
         // Create the router chat client with the system prompt
-        this.routerChatClient = chatClientBuilder.defaultSystem(systemPrompt)
+        this.routerChatClient = chatClientBuilder.defaultSystem(systemRouterPrompt)
                 .build();
     }
 
@@ -44,7 +44,6 @@ public class AgentService {
      */
     public String routeInquiry(String inquiry) {
         // Use the router chat client to determine the appropriate chat client for the inquiry
-        // Blocking call to get the response
         return this.routerChatClient
                 .prompt()
                 .user(inquiry)

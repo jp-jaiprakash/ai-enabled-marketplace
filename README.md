@@ -69,6 +69,8 @@ You do not need to setup the environment variable at this stage, as it will be l
 - As seen in the slides, update your JUnit test configuration so it properly sets the value for the environment variable OPENAI_API_KEY, you can get the key [here]( https://ctxt.io/2/AAB4vv0pEA) (not required for online IDE)
 - Run your test to verify setup.
 - (To run the test for the online IDE execute in the shell `mvn -Dtest=ApplicationTests test` )
+- Check your [application.properties](handson/src/main/resources/application.properties) file, the `spring.ai.openai.api-key` property should be set to `${OPENAI_API_KEY}`.
+- Check your [pom.xml](handson/pom.xml) file, the `spring-ai-starter-model-openai` dependency should be present.
 
 ### 2. Using the ChatClient
 
@@ -122,7 +124,7 @@ try to do it by yourself.
 
 #### 4 UI
 #### 4.1 Setup an UI to discuss with the seller agent
-1. In the  [AiMarketPlaceController](handson/src/main/java/com/zenika/handson/controllers/AiMarketPlaceController.java) define a new endpoint `/api/marketplace/chat` that will be used to communicate with the seller agent.
+1. In the [AiMarketPlaceController](handson/src/main/java/com/zenika/handson/controllers/AiMarketPlaceController.java) define a new endpoint `/api/marketplace/chat` that will be used to communicate with the seller agent.
    - Define those two records in the controller:
 ```java
 record ChatRequest(String message, String user) {}
@@ -156,6 +158,201 @@ If you did not complete the section 3.1, please checkout the branch : `solution_
      -H "Content-Type: application/json" \
      -d '{"message": "List the products available in the marketplace", "user": "test"}'
      ```
+     [McpApplication](mcp_server/src/main/java/com/zenika/mcp_server/McpApplication.java)
+2. We'll be now having a look at the MCP serveur project, which is located in the [McpApplication](mcp_server) folder.
+   Open the [McpApplication](mcp_server) and check the following file: 
+   - The configuration file [application.properties](mcp_server/src/main/resources/application.properties), what is the MCP server port? What is the MCP server endpoint ? is the MCP server sync or async?  What is this option used for `spring.ai.mcp.server.stdio.enabled=true`?
+   - The Pom file [pom.xml](mcp_server/pom.xml),  Find and identify what is the `spring-ai-mcp-server` dependency used for ?
+   - Check the Product repository [ProductRepository](mcp_server/src/main/java/com/zenika/mcp_server/repository/ProductRepository.java), the data available in the [data.sql](mcp_server/src/main/resources/data.sql) file and the schema in the [schema.sql](mcp_server/src/main/resources/schema.sql). What are the products available in the marketplace?
+3. Define a new Tool in [StoreTools](mcp_server/src/main/java/com/zenika/mcp_server/config/StoreTools.java) to return the list of sll products available in the marketplace.
+   - The method should be annotated with `@Tool` and should return a `ProductResponseList`.
+   - The method should use the `ProductRepository` to retrieve the products from the database.
+   - The `@Tool` annotation should have the following parameters:
+     - `name` provide a meaningful name for the tool, for example `getAllItems`
+     - `description` provide a meaningful description for the tool
+     
+   Why is it important to provide a meaningful name and description for the tool?
+4. Update the [McpServerApplication.java](mcp_server/src/main/java/com/zenika/mcp_server/McpServerApplication.java) to expose the `StoreTools` on the MCP server.
+  ```java
+   	@Bean
+	public ToolCallbackProvider tools(StoreTools sellerAccountTools) {
+		return ... // Use the StoreTools to create a ToolCallbackProvider
+}
+```
+4. Back on the Agent project,Update the [AgentConfiguration](handson/src/main/java/com/zenika/handson/configuration/AgentConfiguration.java) to inject the `ToolCallbackProvider toolCallbackProvider` into the `sellerAgentChatClient` bean.
+   - Go into the application.properties file and set the following properties:
+     - `spring.ai.mcp.client.sse.connections.account-mcp-server.url` Set the URL to the MCP server following the configuration in the [application.properties](mcp_server/src/main/resources/application.properties) file
+     - `spring.ai.mcp.client.type` Set the type value following the configuration in the [application.properties](mcp_server/src/main/resources/application.properties) file
+     - `spring.ai.mcp.server.stdio.port` Set the port to the MCP server following the configuration in the [application.properties](mcp_server/src/main/resources/application.properties) file
+   
+5. Run the MPC server using the command `mvn spring-boot:run` from the `mcp_server` folder.
+   - If you are using the online IDE, you can run the MCP server by clicking on the "Run" button in the IDE.
+   - If you are running it locally, make sure to run it in a separate terminal window.
+   - 
+6. Back on the Agent project, Using the UI or a curl command, ask to your agent to list the products available in the marketplace.
+    - What is the response? Is it what you expected?
+      If you are not using the UI you can use the following curl command:
+   - ```bash
+     curl -X POST http://localhost:8080/api/marketplace/chat \
+     -H "Content-Type: application/json" \
+     -d '{"message": "List the products available in the marketplace", "user": "test"}'
+     ```
+     What is the response ?
+     How spring AI is able to call the MCP server and retrieve the list of products ?
+   
+7. Run the JUnit test [SellerAgentTests](handson/src/test/java/com/zenika/handson/agents/seller/SellerAgentTests.java) `getAllProduct` and check if the test is passing.
+
+#### 6 User management Agent And Rooter agent
+#### 6.1 Add a user Agent to manage the user requests
+We now have an agent that can communicate with the MCP server and retrieve the list of products available in the marketplace.
+
+But we want more, what about an agent that can manage the user requests, like creating a new user, updating a user, deleting a user, etc.
+
+1. Why do we need a user agent ? Why not just use the seller agent to manage the user requests ?
+2. What will be the problem if we have multiple agents with our current implementation ? And what is the pattern to follow in order to avoid this problem ?
+3. Let's have a look at [PromptBeanService](handson/src/main/java/com/zenika/handson/services/PromptBeanService.java) class.
+   - Can you explain what is `DefaultListableBeanFactory` ? 
+   - Can you explain the function `getBeanDefinitionDescription` ?.
+   - Can you explain the function `getAllBeansDefinitionDescriptions` ?
+4. If the section 6.3 is understood let's create an agent that will manage the other agent :
+   1. Inside [AgentService](handson/src/main/java/com/zenika/handson/services/AgentService.java), add the variable `private final Map<String, ChatClient> chatClientMap;` and initialize it in the constructor using spring injection.
+      - What is the purpose of this variable ? and what will be the contents of this variable injected by Spring ?
+   2. Inside [AgentService](handson/src/main/java/com/zenika/handson/services/AgentService.java), add the variable `private final ChatClient routerChatClient;` but do not initialize it yet.
+   3. Inside [AgentConfiguration](handson/src/main/java/com/zenika/handson/configuration/AgentConfiguration.java), inject in the constructor the chatClient builder `ChatClient.Builder chatClientBuilder`
+   4. Inside [PromptContants](handson/src/main/java/com/zenika/handson/constant/PromptContants.java). define the constant `ROUTER_AGENT_PROMPT` with a prompt that:
+        - Check on the Agent description to chose which agent to use following the user inquiry.
+        - Mention that only the name of the agent should be returned in the response
+        - Here is an example of a prompt you can use, but try to do it by yourself:
+        ```java
+            public static final String ROUTER_PROMPT = """
+                You are a router. When a request comes in, inspect the request and determine which of the following categories best matches the nature of the request and then return the category, and only the category of the best match. Here is a description of each category and an explanation of why you might choose that category.
+                """;
+        ```
+   5. Inside [AgentService](handson/src/main/java/com/zenika/handson/services/AgentService.java) controller, create a string `systemRouterPrompt` containing :
+      - The `ROUTER_PROMPT` constant defined in the previous step.
+      - And concatenate with the description of all the agents available in the `chatClientMap` variable using the promptBeanService.
+      - ```java
+            // Build the system prompt for the router chat client
+            String systemRouterPrompt = ROUTER_PROMPT + this.promptBeanService.getAllBeansDefinitionDescriptions(...);
+        ```
+   6. [AgentService](handson/src/main/java/com/zenika/handson/services/AgentService.java) , initialize `routerChatClient` using `chatClientBuilder` with a `defaultSystem` equal to `systemRouterPrompt`.
+   7. Now we have a router agent that can route the requests to the appropriate agent, but our current agent do not have description, let's add a description to the seller agent.
+      - Inside [AgentConfiguration](handson/src/main/java/com/zenika/handson/configuration/AgentConfiguration.java), add a `@Description` on the `sellerAgentDescription` that will be used to describe the seller agent.
+      - The description should be similar to the one below but try to do it by yourself:
+      ```java
+        @Bean
+        @Description("This Chat should be use to handle inquiries about listing products, retrieving product details, and reply about product information.")
+        ChatClient sellerAgentChatClient(...)
+      ```
+   8. Uncomment the function `routeInquiry` and `getChatClient` inside [AgentService](handson/src/main/java/com/zenika/handson/services/AgentService.java).
+        - What is the function of `routeInquiry` ? execute the JUnit test [AgentServiceTests](handson/src/test/java/com/zenika/handson/agents/AgentServiceTests.java) `getTheSellerAgentForProductInquiry` and check if the test is passing.
+        - What is the function if `getChatClient`? execute the JUnit test [AgentServiceTests](handson/src/test/java/com/zenika/handson/agents/AgentServiceTests.java) `sellerAgentIsPartOfAgentMap` and check if the test is passing.
+   9. Now let's update our router to use the `routerChatClient` to route the inquiries to the appropriate agent.
+      - Inside [AiMarketPlaceController](handson/src/main/java/com/zenika/handson/controllers/AiMarketPlaceController.java), update the controller as following
+      - ```java
+        @PostMapping("/chat")
+        public ChatResponse generate(@RequestBody ChatRequest chatRequest) {
+            // Use the AgentService to get the appropriate agent name from the inquiry
+            var resolvedChatClient = ...;
+            var agentClient = this.agentService.getChatClient(resolvedChatClient);
+            String response =  agentClient
+                .prompt()
+                .user(...) // Complete with user inquiry
+                .system(...) // Complete with system prompt concatenated with the curent chat prompt using `promptBeanService.getBeanDefinitionDescription`
+                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, chatRequest.user()))
+                .call()
+                .content();
+            return new ChatResponse(response);
+        }
+        ```
+     10. Explain the following:
+        - `.advisors(a -> a.param(ChatMemory.CONVERSATION_ID, chatRequest.user()))` what is this line used for ?
+        - Why do we have to set the system prompt at each call ? if we already set it in our chatClient here [AgentConfiguration](handson/src/main/java/com/zenika/handson/configuration/AgentConfiguration.java).
+   
+5. Let's create an agent that will manage the user requests.
+   - Inside [AgentConfiguration](handson/src/main/java/com/zenika/handson/configuration/AgentConfiguration.java) add a new `@Bean` called `userManagementChatClient` that will be used to manage the user related requests.
+   - ```java
+            @Bean
+            @Description("""This Chat should be use to handle User management.This Chat should be able to handle inquiries about creating a new user, 
+            updating an existing user.This Chat can add or update users in the database.Validate if user exists in database by given id""")
+            ChatClient userManagementChatClient(ChatClient.Builder chatClientBuilder, ...) {
+                /**
+                 * Create a ChatClient instance for the user management agent.
+                 * This client will be used to interact with the OpenAI API.
+                 */
+                 chatClientBuilder
+                .defaultSystem(GENERAL_MARKET_PLACE_PROMPT)
+                .defaultToolCallbacks(...)
+                .defaultAdvisors(...)
+                .build();
+            }
+        ```
+   - Inside the MPC project let's add the tool to handle users [StoreTools](mcp_server/src/main/java/com/zenika/mcp_server/config/StoreTools.java)
+     1. Create a Tool get a user info base on it's email
+        - The method should be annotated with `@Tool` and should return a `UserResponse`.
+        - The method should use the `UserRepository` to retrieve the user from the database.
+        - The `@Tool` annotation should have the following parameters:
+          - `name` provide a meaningful name for the tool, for example `getUserById`
+          - `description` provide a meaningful description for the tool, for example `Get user information by user Id. Returns the user's ID, name, and email."`
+     2. Create a Tool to create a new user
+        - The method should be annotated with `@Tool` and should return a `UserResponse`.
+        - The method should use the `UserRepository` to save the user in the database.
+        - The `@Tool` annotation should have the following parameters:
+          - `name` provide a meaningful name for the tool, for example `createUser`
+          - `description` provide a meaningful description for the tool, for example `Create a new user. Returns the created user's ID, name, and email."`
+     3. Create a Tool to update an existing user
+        - The method should be annotated with `@Tool` and should return a `UserResponse`.
+        - The method should use the `UserRepository` to update the user in the database.
+        - The `@Tool` annotation should have the following parameters:
+          - `name` provide a meaningful name for the tool, for example `updateUser`
+          - `description` provide a meaningful description for the tool, for example `Update an existing user. Returns the updated user's ID, name, and email."`
+
+   - Execute the JUnit test [UserAgentTests](handson/src/test/java/com/zenika/handson/agents/userManagement/UserAgentTests.java) and check if the test is passing.
+6. Using the UI or a curl command, ask to your agent to add, update or get user information
+
+#### 7 RAG using vector Database
+#### 7.1 Create an agent to load term and conditions from a vector in memory database
+The term an Condition is stored in a file describing the terms and conditions of the marketplace,
+we want to be able ask questions about the term and conditions and get the answer from the file.
+1. Add the dependency `spring-ai-vector-store-in-memory` in the [pom.xml](handson/pom.xml) file.
+2. Inject the data into the in memory vector store, using [FileIngestor](handson/src/main/java/com/zenika/handson/configuration/FileIngestor.java).
+   - Inside the constructor, inject `VectorStore store`
+   - load the `term-and-co.txt` file located inside the resource .
+   - Convert the content to a `Document`.
+   - Split the content into chunks using the `TokenTextSplitter` class.
+   - Store the chunks in the vector store using the `VectorStore` class.
+   - ```
+        public FileIngestor(VectorStore store) throws IOException {
+        ClassPathResource resource = new ClassPathResource(...);
+        String content = Files.readString(...);
+        Document doc = new Document(content);
+        List<Document> docs = ...
+        store.add(docs);
+   }
+    ```
+3. Create a new agent that will be used to answer questions about the term and conditions.
+   - Inside [AgentConfiguration](handson/src/main/java/com/zenika/handson/configuration/AgentConfiguration.java) add a new `@Bean` called `termAndConditionChatClient` that will be used to answer questions about the term and conditions.
+   - ```java
+            @Bean
+            @Description("This Chat should be use answer all the term and conditions related inquiries.")
+            ChatClient termAndConditionChatClient(ChatClient.Builder chatClientBuilder, ...) {
+            return chatClientBuilder
+            .defaultSystem(GENERAL_MARKET_PLACE_PROMPT)
+            .defaultTools()
+            .defaultAdvisors(..., ...)
+            .build();
+    ```
+4.
+
+
+#### 7 Prompting
+#### 7.1 Convert my agent to a professional seller agent with prompting
+If you did not complete the section 6, please checkout the branch : `solution_6.?`
+
+We now have an agent that can communicate with the MCP server and retrieve the list of products available in the marketplace.
+However, we want to make our agent more professional and be able to negotiate the selling of a product like a pro.
+
+
 - Inside the package `com.spring.book`, create a new Java record called Book. It should have 2 attributes: author and title.
 - Inside [BookRecommendationService](src/main/java/com/spring/book/BookRecommendationService.java), add a method called `findFictionBook`. It should use a ChatClient instance in order to ask for the best fiction book in year 2023 and return the response as a Book entity.
 - Inside BookRecommendationServiceTest, add a method `shouldFindFictionBook`. It should call BookRecommendationService.findFictionBook(), log the result, and assert that the result is not empty.
@@ -167,25 +364,9 @@ If you did not complete the section 3.1, please checkout the branch : `solution_
 If you are able to see the response in the logs, you have successfully mapped your response to an entity, congratulations!
 
 
-#### 3.3 What’s the Weather Like? (Image Model API)
-If you did not complete the section 3.2, please checkout the branch : `solution_3.2`
 
-Inside the folder src/main/resources, you have a folder [weather](src/main/resources/weather), check the lab file [singapore-weather.png](src/main/resources/weather/singapore-weather.png).
-- Create a new java package `com.spring.weather`. Inside this package, create a class called `WeatherService`. As seen in the slides, it should load [singapore-weather.png](src/main/resources/weather/singapore-weather.png) as a `org.springframework.core.io.Resource` and use it to make a call to the LLM. The question should be "what will be the weather like on Tuesday"
-- When done, create a test class called `com.spring.weather.WeatherServiceTest`.
-  Before running `WeatherServiceTest`, edit its run configuration and add an environment variable `OPENAI_API_KEY` for the OpenAI API [key]( https://ctxt.io/2/AAB4vv0pEA) (not required for online IDE)
-
-(For the online IDE execute in the shell `mvn -Dtest=WeatherServiceTest test` )
-
-
-
-If you are able to call `WeatherService` successfully and get the correct weather forecast, you have completed this lab, congratulations!
-
-### 4. (BONUS) Retrieval Augmented Generation / Vector DB
-
-Congratulation ! The handsOn is now over. If you want more, here is a new challenge :
-- Checkout the project : https://github.com/michaelisvy/demo-spring-ai/
-- Read the ReadMe instruction and try to run one of the following : `MusicWithContextService`, `BookSearchService`
+### 4. (BONUS)
+- Create an Agent to place order a product in the marketplace.
 
 
 

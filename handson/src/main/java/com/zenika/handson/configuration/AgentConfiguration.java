@@ -95,7 +95,6 @@ public class AgentConfiguration {
         // --- USER MANAGEMENT PROMPT ---
         return chatClientBuilder
                 .defaultSystem(GENERAL_MARKET_PLACE_PROMPT)
-                .defaultTools()
                 .defaultToolCallbacks(toolCallbackProvider )
                 .defaultAdvisors(defaultChatMemoryAdvisor)
                 .build();
