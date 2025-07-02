@@ -45,4 +45,36 @@ class StoreToolsTest {
         // 2. (Optional but good practice) Verify that the getAllItems method on the service was actually called once.
         verify(storeService).getAllItems();
     }
+
+    @Test
+    void testSearchProducts_ShouldDelegateToStoreService_WithMultipleResults() {
+        // Arrange
+        String query = "Laptop";
+
+        ProductResponse laptop1 = new ProductResponse(1, "Laptop Pro", 1200.00, 50, "A powerful laptop for professionals.");
+        ProductResponse laptop2 = new ProductResponse(2, "Laptop Air", 999.99, 30, "Lightweight and portable.");
+
+        ProductResponseList expectedResponse = new ProductResponseList(List.of(laptop1, laptop2));
+
+        when(storeService.searchProducts(query)).thenReturn(expectedResponse);
+
+        // Act
+        ProductResponseList actualResponse = storeTools.searchProducts(query);
+
+        // Assert
+        assertThat(actualResponse).isSameAs(expectedResponse);
+        assertThat(actualResponse.products()).hasSize(2);
+
+        ProductResponse response1 = actualResponse.products().get(0);
+        assertThat(response1.id()).isEqualTo(1);
+        assertThat(response1.name()).isEqualTo("Laptop Pro");
+
+        ProductResponse response2 = actualResponse.products().get(1);
+        assertThat(response2.id()).isEqualTo(2);
+        assertThat(response2.name()).isEqualTo("Laptop Air");
+
+        verify(storeService).searchProducts(query);
+    }
+
+
 }

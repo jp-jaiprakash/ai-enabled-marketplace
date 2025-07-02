@@ -1,6 +1,7 @@
 package com.zenika.mcp_server.service;
 
 import com.zenika.mcp_server.entity.Product;
+import com.zenika.mcp_server.model.ProductResponse;
 import com.zenika.mcp_server.model.ProductResponseList;
 import com.zenika.mcp_server.repository.ProductRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,6 +12,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -84,4 +86,47 @@ class StoreServiceTest {
         assertThat(result).isNotNull();
         assertThat(result.products()).isEmpty();
     }
+
+    @Test
+    void testSearchProducts_ShouldReturnMatchingProducts() {
+        // Arrange
+        String query = "laptop";
+
+        // Set up a product that matches the search query
+        Product matchingProduct = new Product();
+        matchingProduct.setId(3);
+        matchingProduct.setName("Gaming Laptop");
+        matchingProduct.setDescription("A high-performance gaming laptop.");
+        matchingProduct.setTargetSellingPrice(1500.00);
+        matchingProduct.setStock(20);
+
+        // Set up another product that also matches
+        Product anotherMatchingProduct = new Product();
+        anotherMatchingProduct.setId(4);
+        anotherMatchingProduct.setName("Laptop Sleeve");
+        anotherMatchingProduct.setDescription("Protective sleeve for laptops.");
+        anotherMatchingProduct.setTargetSellingPrice(25.00);
+        anotherMatchingProduct.setStock(100);
+
+        when(productRepository.findByNameContainingIgnoreCase(query)).thenReturn(List.of(matchingProduct, anotherMatchingProduct));
+
+        // Act
+        ProductResponseList result = storeService.searchProducts(query);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result.products()).hasSize(2);
+
+        ProductResponse response1 = result.products().get(0);
+        assertThat(response1.id()).isEqualTo(matchingProduct.getId());
+        assertThat(response1.name()).isEqualTo(matchingProduct.getName());
+        assertThat(response1.price()).isEqualTo(matchingProduct.getTargetSellingPrice());
+        assertThat(response1.stock()).isEqualTo(matchingProduct.getStock());
+        assertThat(response1.description()).isEqualTo(matchingProduct.getDescription());
+
+        ProductResponse response2 = result.products().get(1);
+        assertThat(response2.id()).isEqualTo(anotherMatchingProduct.getId());
+        assertThat(response2.name()).isEqualTo(anotherMatchingProduct.getName());
+    }
+
 }
