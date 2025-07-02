@@ -27,4 +27,18 @@ add method in interface
 complete the implementation
 update the repo and its method
 first complete the store service
+
 then update store tools
+
+
+--- order
+create orderrequest / orderResponse object with params
+orderrepository
+orderitemrepository
+create userRepository
+
+add method in interface
+implement it
+
+update storetools
+

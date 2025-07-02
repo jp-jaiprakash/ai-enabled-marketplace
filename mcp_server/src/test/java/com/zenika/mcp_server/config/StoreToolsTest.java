@@ -1,5 +1,7 @@
 package com.zenika.mcp_server.config;
 
+import com.zenika.mcp_server.model.OrderRequest;
+import com.zenika.mcp_server.model.OrderResponse;
 import com.zenika.mcp_server.model.ProductResponse;
 import com.zenika.mcp_server.model.ProductResponseList;
 import com.zenika.mcp_server.service.StoreService;
@@ -76,5 +78,24 @@ class StoreToolsTest {
         verify(storeService).searchProducts(query);
     }
 
+    @Test
+    void testPlaceOrder_ShouldDelegateToStoreService() {
+        // Arrange
+        OrderRequest request = new OrderRequest("1", 2, 1, 101); // productId, quantity, price, userId
+        OrderResponse expectedResponse = new OrderResponse("999", "CONFIRMED");
+
+        when(storeService.placeOrder(request)).thenReturn(expectedResponse);
+
+        // Act
+        OrderResponse actualResponse = storeTools.placeOrder(request);
+
+        // Assert
+        assertThat(actualResponse).isSameAs(expectedResponse);
+        assertThat(actualResponse.orderId()).isEqualTo("999");
+        assertThat(actualResponse.status()).isEqualTo("CONFIRMED");
+
+        // Verify delegation
+        verify(storeService).placeOrder(request);
+    }
 
 }

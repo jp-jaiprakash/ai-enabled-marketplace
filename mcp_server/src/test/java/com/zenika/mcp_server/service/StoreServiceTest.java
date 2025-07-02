@@ -1,9 +1,17 @@
 package com.zenika.mcp_server.service;
 
+import com.zenika.mcp_server.entity.Order;
+import com.zenika.mcp_server.entity.OrderItem;
 import com.zenika.mcp_server.entity.Product;
+import com.zenika.mcp_server.entity.User;
+import com.zenika.mcp_server.model.OrderRequest;
+import com.zenika.mcp_server.model.OrderResponse;
 import com.zenika.mcp_server.model.ProductResponse;
 import com.zenika.mcp_server.model.ProductResponseList;
+import com.zenika.mcp_server.repository.OrderItemRepository;
+import com.zenika.mcp_server.repository.OrderRepository;
 import com.zenika.mcp_server.repository.ProductRepository;
+import com.zenika.mcp_server.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,7 +23,10 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class StoreServiceTest {
@@ -23,6 +34,10 @@ class StoreServiceTest {
     // The mock dependency. Mockito will create a mock implementation of this interface.
     @Mock
     private ProductRepository productRepository;
+
+    @Mock private UserRepository userRepository;
+    @Mock private OrderRepository orderRepository;
+    @Mock private OrderItemRepository orderItemRepository;
 
     // The class we are testing. Mockito will inject the mock objects (productRepository) into this instance.
     @InjectMocks
@@ -128,5 +143,67 @@ class StoreServiceTest {
         assertThat(response2.id()).isEqualTo(anotherMatchingProduct.getId());
         assertThat(response2.name()).isEqualTo(anotherMatchingProduct.getName());
     }
+
+    @Test
+    void testPlaceOrder_ShouldSucceed_WhenStockIsSufficient() {
+        // Arrange
+        OrderRequest orderRequest = new OrderRequest("1", 2, 1, 101); // productId = "1", quantity = 2, userId = 101
+
+        Product product = new Product();
+        product.setId(1);
+        product.setName("Laptop");
+        product.setStock(5);
+        product.setTargetSellingPrice(100.0);
+
+        User user = new User();
+        user.setId(1);
+        user.setName("John");
+
+        // Simulate save setting the ID
+        when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> {
+            Order order = invocation.getArgument(0);
+            order.setId(999); // <-- Important
+            return order;
+        });
+
+        when(productRepository.findById(1)).thenReturn(Optional.of(product));
+        when(userRepository.findById(1)).thenReturn(Optional.of(user));
+
+        // Act
+        OrderResponse response = storeService.placeOrder(orderRequest);
+
+        // Assert
+        assertThat(response).isNotNull();
+        assertThat(response.orderId()).isEqualTo("999");
+        assertThat(response.status()).isEqualTo("CONFIRMED");
+
+        verify(productRepository).save(argThat(p -> p.getStock() == 3));
+        verify(orderRepository).save(any(Order.class));
+        verify(orderItemRepository).save(any(OrderItem.class));
+    }
+
+    @Test
+    void testPlaceOrder_ShouldThrowException_WhenNotEnoughStock() {
+        // Arrange
+        Product product = new Product();
+        product.setId(1);
+        product.setName("Mouse");
+        product.setStock(1);
+
+        OrderRequest request = new OrderRequest("1", 5, 2, 101);
+
+        when(productRepository.findById(1)).thenReturn(Optional.of(product));
+
+        // Act & Assert
+        assertThatThrownBy(() -> storeService.placeOrder(request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Not enough stock for product: Mouse");
+
+        verify(productRepository, never()).save(any());
+        verifyNoInteractions(userRepository, orderRepository, orderItemRepository);
+    }
+
+
+
 
 }
