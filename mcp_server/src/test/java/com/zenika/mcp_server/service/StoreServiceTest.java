@@ -203,7 +203,38 @@ class StoreServiceTest {
         verifyNoInteractions(userRepository, orderRepository, orderItemRepository);
     }
 
+    @Test
+    void testGetOrderStatus_ShouldReturnOrderResponse_WhenOrderExists() {
+        // Arrange
+        Order order = new Order();
+        order.setId(123);
+        order.setStatus("DISPATCHED");
 
+        when(orderRepository.findById(123)).thenReturn(Optional.of(order));
+
+        // Act
+        Optional<OrderResponse> result = storeService.getOrderStatus("123");
+
+        // Assert
+        assertThat(result).isPresent();
+        assertThat(result.get().orderId()).isEqualTo("123");
+        assertThat(result.get().status()).isEqualTo("DISPATCHED");
+
+        verify(orderRepository).findById(123);
+    }
+
+    @Test
+    void testGetOrderStatus_ShouldReturnEmpty_WhenOrderNotFound() {
+        // Arrange
+        when(orderRepository.findById(999)).thenReturn(Optional.empty());
+
+        // Act
+        Optional<OrderResponse> result = storeService.getOrderStatus("999");
+
+        // Assert
+        assertThat(result).isEmpty();
+        verify(orderRepository).findById(999);
+    }
 
 
 }

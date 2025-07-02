@@ -25,6 +25,13 @@ public class StoreTools {
     public OrderResponse placeOrder(OrderRequest orderRequest) {
         return storeService.placeOrder(orderRequest);
     }
+
+    @Tool(name = "getOrderStatus", description = "Get the current status of an existing order using its specific order ID (e.g., ORD-ABCD).")
+    public Object getOrderStatus(String orderId) {
+        return storeService.getOrderStatus(orderId)
+                .orElse(new OrderResponse(orderId, "Order with ID '" + orderId + "' was not found."));
+    }
+
     @Tool(name = "getAllItems", description = "Get All the items in the inventory.")
     public ProductResponseList getAllItems() {
         return storeService.getAllItems();

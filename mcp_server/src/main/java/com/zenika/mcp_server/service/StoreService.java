@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 
 @Service
@@ -93,6 +94,12 @@ public class StoreService implements IStoreService {
         }).start();
 
         return new OrderResponse(order.getId().toString(), order.getStatus());
+    }
+
+    @Override
+    public Optional<OrderResponse> getOrderStatus(String orderId) {
+        return orderRepository.findById(Integer.valueOf(orderId))
+                .map(o -> new OrderResponse(o.getId().toString(), o.getStatus()));
     }
 
     public ProductResponseList getAllItems() {

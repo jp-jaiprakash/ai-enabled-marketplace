@@ -12,6 +12,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
@@ -98,4 +99,42 @@ class StoreToolsTest {
         verify(storeService).placeOrder(request);
     }
 
+
+    @Test
+    void testGetOrderStatus_ShouldReturnOrderResponse_WhenOrderExists() {
+        // Arrange
+        String orderId = "123";
+        OrderResponse expectedResponse = new OrderResponse(orderId, "DISPATCHED");
+
+        when(storeService.getOrderStatus(orderId)).thenReturn(Optional.of(expectedResponse));
+
+        // Act
+        Object result = storeTools.getOrderStatus(orderId);
+
+        // Assert
+        assertThat(result).isInstanceOf(OrderResponse.class);
+        OrderResponse response = (OrderResponse) result;
+        assertThat(response.orderId()).isEqualTo(orderId);
+        assertThat(response.status()).isEqualTo("DISPATCHED");
+
+        verify(storeService).getOrderStatus(orderId);
+    }
+
+    @Test
+    void testGetOrderStatus_ShouldReturnFallback_WhenOrderNotFound() {
+        // Arrange
+        String orderId = "999";
+        when(storeService.getOrderStatus(orderId)).thenReturn(Optional.empty());
+
+        // Act
+        Object result = storeTools.getOrderStatus(orderId);
+
+        // Assert
+        assertThat(result).isInstanceOf(OrderResponse.class);
+        OrderResponse response = (OrderResponse) result;
+        assertThat(response.orderId()).isEqualTo(orderId);
+        assertThat(response.status()).isEqualTo("Order with ID '" + orderId + "' was not found.");
+
+        verify(storeService).getOrderStatus(orderId);
+    }
 }
