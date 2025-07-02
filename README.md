@@ -52,7 +52,7 @@ Instead, it should use the ${OPENAI_API_KEY} syntax in order to refer to an envi
 You do not need to setup the environment variable at this stage, as it will be later setup inside your JUnit test
 
 #### 1.3 Running your first JUnit test
-- In `src/main/test`, update the [ApplicationTests](src/test/java/com/spring/ApplicationTests.java) class:
+- In `src/main/test`, update the [HandsonApplicationTests](handson/src/test/java/com/zenika/handson/HandsonApplicationTests.java) class:
   ```java
   @SpringBootTest
   class ApplicationTests {
@@ -72,38 +72,90 @@ You do not need to setup the environment variable at this stage, as it will be l
 
 ### 2. Using the ChatClient
 
-#### 2.1 Using the ChatClient for book recommendations
-1. Update the class [BookRecommendationService](src/main/java/com/spring/book/BookRecommendationService.java)  in `com.spring.book`.
+#### 2.1 Using the ChatClient to setup a seller Marketplace Agent
+1. Update the class [AgentConfiguration](handson/src/main/java/com/zenika/handson/configuration/AgentConfiguration.java)  in `com.zenika.handson.configuration`.
 
-   As its name says, it is a Spring service and should be annotated with the `@Service` stereotype annotation
+   As its name says, it is a Spring Configuration and should be annotated with the `@Configuration` stereotype annotation
 
-2. Initialize the `chatClient` in the [BookRecommendationService](src/main/java/com/spring/book/BookRecommendationService.java) constructor
+2. Initialize the `@Bean chatClient` with the name `sellerAgentChatClient` in the [AgentConfiguration](handson/src/main/java/com/zenika/handson/configuration/AgentConfiguration.java)
+  ```java
+@Bean
+ChatClient sellerAgentChatClient(ChatClient.Builder chatClientBuilder) {
+    /**
+     * Create a ChatClient instance for the seller agent.
+     * This client will be used to interact with the OpenAI API.
+     */
+}
+  ```
+Set the `defaultSystem` prompt to `GENERAL_MARKET_PLACE_PROMPT` constant localized in [PromptContants](handson/src/main/java/com/zenika/handson/constant/PromptContants.java).
 
-3. Inside [BookRecommendationService](src/main/java/com/spring/book/BookRecommendationService.java), Complete the method `findMostPopularProgrammingBooks`. It should use a `ChatClient` instance in order to ask for the 5 best programming books in year 2023 and return the response in a String format.
+3. Inside [PromptContants](handson/src/main/java/com/zenika/handson/constant/PromptContants.java), Fill up the variable `GENERAL_MARKET_PLACE_PROMPT`, with a guideline for the chat client to be a marketplace named "Zeni Marketplace" who sell products to customer. The prompt should be similar to the one below:
+  ```java
+public static final String GENERAL_MARKET_PLACE_PROMPT = """
+    You are a helpful assistant in a market place named ZeniMarket.
+        Your role is to politely assist users about their inquiries related to products, orders, and general information about the market place.
+    """;
+  ```
+try to do it by yourself.
 
-4. Update a JUnit test [BookRecommendationServiceTest](src/test/java/com/spring/book/BookRecommendationServiceTest.java) complete the methode `shouldFindMostPopularProgrammingBooks`
+4. Update a JUnit test [SellerAgentTests](handson/src/test/java/com/zenika/handson/agents/seller/SellerAgentTests.java) complete the methode `sellerAgentCanCommunicate` and make sure the test is passing.
 
-Before running `BookRecommendationServiceTest`, edit its run configuration and add an environment variable `OPENAI_API_KEY` for the OpenAI API [key]( https://ctxt.io/2/AAB4vv0pEA) (not required for online IDE)
+### 3. Chat Memory
 
-Run `BookRecommendationServiceTest`. If you are able to see the response in the logs, you have successfully used Spring AI with OpenAI, congratulations!
+#### 3.1 Using chat memory to keep track of the conversation
+1. Run the JUnit test [SellerAgentTests](handson/src/test/java/com/zenika/handson/agents/seller/SellerAgentTests.java) `sellerAgentChatMemory` test
+   Why is it failing? What is the problem?
+2. Update the [AgentConfiguration](handson/src/main/java/com/zenika/handson/configuration/AgentConfiguration.java) to add a `@Bean` called `defaultChatMemoryAdvisor` that will be used to store the conversation history.
+```java
+    @Bean
+    PromptChatMemoryAdvisor defaultChatMemoryAdvisor(...) {
+        /**
+         * Create a PromptChatMemoryAdvisor instance that will be used to store the conversation history.
+         * This advisor will be used by the ChatClient to keep track of the conversation.
+         */
+        
+    }
+```
+3. Update the [AgentConfiguration](handson/src/main/java/com/zenika/handson/configuration/AgentConfiguration.java) to inject the `defaultChatMemoryAdvisor` into the `sellerAgentChatClient` bean.
 
-(For the online IDE execute in the shell `mvn -Dtest=BookRecommendationServiceTest#shouldFindMostPopularProgrammingBooks test` )
-### 3. Logs, Entities, and Images
+4. Run the JUnit test [SellerAgentTests](handson/src/test/java/com/zenika/handson/agents/seller/SellerAgentTests.java) `sellerAgentChatMemory` test again and check if the test is passing now.
 
-#### 3.1 Using logs to understand API calls
-If you did not complete the section 2, please checkout the branch : `solution_2.1`
-- Enable a `SimpleLoggerAdvisor` for `BookRecommendationService`.
+#### 4 UI
+#### 4.1 Setup an UI to discuss with the seller agent
+1. In the  [AiMarketPlaceController](handson/src/main/java/com/zenika/handson/controllers/AiMarketPlaceController.java) define a new endpoint `/api/marketplace/chat` that will be used to communicate with the seller agent.
+   - Define those two records in the controller:
+```java
+record ChatRequest(String message, String user) {}
+record ChatResponse(String response) {}
+```
+   - The endpoint should accept a POST request with a JSON body containing a `ChatRequest` field.
+   - The endpoint should return a JSON response containing a `ChatResponse` field.
+```java
+@CrossOrigin(origins = {"http://localhost:3000", "http://127.0.0.1:3000"})
+@PostMapping("/chat")
+public ChatResponse generate(@RequestBody ...) {
+    /**
+     * This method will be used to communicate with the seller agent.
+     * It will use the ChatClient to send the message and return the response.
+     */
+  ...
+  return new ChatResponse(response);
+}
+```
+  - Inject the `sellerAgentChatClient` into the controller and use it to send the message to the agent.
+2. Install and run the UI located in  ...(to continue @Jai)
 
-  Inside [BookRecommendationService](src/main/java/com/spring/book/BookRecommendationService.java), update the call to the builder so it declares a `SimpleLoggerAdvisor`.
-  Add the proper log declaration inside [application.properties](src/main/resources/application.properties)
-- Run [BookRecommendationServiceTest](src/test/java/com/spring/book/BookRecommendationServiceTest.java) again and inspect the generated logs. Try and answer the following questions:
-
-  How many tokens did Spring AI use for your request ?
-
-  What was the default [temperature](https://www.iguazio.com/glossary/llm-temperature/) ?
-
-#### 3.2 Structured Output
+#### 5 MCP
+#### 5.1 Retrieve information using MCP
 If you did not complete the section 3.1, please checkout the branch : `solution_3.1`
+1. Using the UI or a curl command, ask to your agent to list the products available in the marketplace.
+   - What is the response? Is it what you expected?
+   If you are not using the UI you can use the following curl command:
+   - ```bash
+     curl -X POST http://localhost:8080/api/marketplace/chat \
+     -H "Content-Type: application/json" \
+     -d '{"message": "List the products available in the marketplace", "user": "test"}'
+     ```
 - Inside the package `com.spring.book`, create a new Java record called Book. It should have 2 attributes: author and title.
 - Inside [BookRecommendationService](src/main/java/com/spring/book/BookRecommendationService.java), add a method called `findFictionBook`. It should use a ChatClient instance in order to ask for the best fiction book in year 2023 and return the response as a Book entity.
 - Inside BookRecommendationServiceTest, add a method `shouldFindFictionBook`. It should call BookRecommendationService.findFictionBook(), log the result, and assert that the result is not empty.
