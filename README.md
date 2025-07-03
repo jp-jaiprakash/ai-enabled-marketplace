@@ -340,7 +340,7 @@ We now have an seller agent that can list products, search product, but what abo
 #### 9 Order Management Agent
 #### 9.1 Create an Order Management Agent
 Let's create an agent that will handle the order management to conclude a deal an get the order status.
-- Inside [AgentConfiguration](handson/src/main/java/com/zenika/handson/configuration/AgentConfiguration.java) add a new ChatClient `@Bean` called `orderManagementChatClient` that will be used to manage the order related requests.
+1. Inside [AgentConfiguration](handson/src/main/java/com/zenika/handson/configuration/AgentConfiguration.java) add a new ChatClient `@Bean` called `orderManagementChatClient` that will be used to manage the order related requests.
   - Here is an example of a prompt you can use but try to do it by yourself:
   ```java
             @Bean
@@ -352,7 +352,7 @@ Let's create an agent that will handle the order management to conclude a deal a
     ChatClient orderManagementChatClient(...)
   ```
 
-- Inside the MPC project let's add the tool to handle users [StoreTools](mcp_server/src/main/java/com/zenika/mcp_server/config/StoreTools.java)
+2. Inside the MPC project let's add the tool to handle users [StoreTools](mcp_server/src/main/java/com/zenika/mcp_server/config/StoreTools.java)
     1. Create a Tool to place order after a deal is settled
         - The method should be annotated with `@Tool` and should return a `OrderResponse`.
         - The method should use the `storeService` to retrieve the user from the database.
@@ -365,6 +365,14 @@ Let's create an agent that will handle the order management to conclude a deal a
         - The `@Tool` annotation should have the following parameters:
             - `name` provide a meaningful name for the tool, for example `getOrderStatus`
             - `description` provide a meaningful description for the tool, for example `"Get the current status of an existing order using its specific order ID (e.g., ORD-ABCD).`
+3. Using the UI or a curl command, ask to your agent to place an order or get the order status.
+   - If you are not using the UI you can use the following curl command:
+   - ```bash
+     curl -X POST http://localhost:8080/api/marketplace/chat \
+     -H "Content-Type: application/json" \
+     -d '{"message": "Place an order for product ID 1 and quantity 2", "user": "test"}'
+     ```
+
 
 #### 10 RAG using vector Database
 #### 10.1 Create an agent to load term and conditions from a vector in memory database
@@ -377,7 +385,7 @@ we want to be able ask questions about the term and conditions and get the answe
    - Convert the content to a `Document`.
    - Split the content into chunks using the `TokenTextSplitter` class.
    - Store the chunks in the vector store using the `VectorStore` class.
-   - ```
+   ```java
         public FileIngestor(VectorStore store) throws IOException {
         ClassPathResource resource = new ClassPathResource(...);
         String content = Files.readString(...);
@@ -388,7 +396,7 @@ we want to be able ask questions about the term and conditions and get the answe
     ```
 3. Create a new agent that will be used to answer questions about the term and conditions.
    - Inside [AgentConfiguration](handson/src/main/java/com/zenika/handson/configuration/AgentConfiguration.java) add a new `@Bean` called `termAndConditionChatClient` that will be used to answer questions about the term and conditions.
-   - ```java
+   ```java
             @Bean
             @Description("This Chat should be use answer all the term and conditions related inquiries.")
             ChatClient termAndConditionChatClient(ChatClient.Builder chatClientBuilder, ...) {
@@ -398,7 +406,10 @@ we want to be able ask questions about the term and conditions and get the answe
             .defaultAdvisors(..., ...)
             .build();
     ```
-4.
+4. Why this agent is not using the MCP server ?
+5. There is multiple Advisors, does the order of the advisors matter ? Why ?
+6. Is there a way to prioritize the advisors ? How ?
+7. Execute the JUnit test [TermAndConditionAgentTests](handson/src/test/java/com/zenika/handson/agents/termAndCondition/TermAndConditionAgentTests.java) and check if the test is passing.
 
 
 
