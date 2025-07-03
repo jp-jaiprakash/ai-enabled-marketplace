@@ -35,12 +35,16 @@ public class UserService {
      * 2. If present, map to `UserResponse` and return.
      * 3. If not present, throw `IllegalArgumentException` with a helpful message.
      */
+
     public UserResponse validateUser(int userId) {
         // TODO: Retrieve user from repository
 
         // TODO: If user is not found, throw IllegalArgumentException
 
         // TODO: Return UserResponse with ID, name, and empty string for extra field
-        return null; // Placeholder
+        var user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        return new UserResponse(user.getId(), user.getName(), "");
     }
 }

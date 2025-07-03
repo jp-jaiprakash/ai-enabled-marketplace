@@ -20,14 +20,30 @@ This lab guide relies on the examples seen in the [slides] (https://docs.google.
 In order to have all the information you need, you should have the lab instructions and the slides side by side, so you can refer to the examples seen in the slides at any time.
 
 
-
 ## Table of Contents
 
 1. [Setting up Spring AI with OpenAI](#setting-up-spring-ai-with-openai)
+   - [Setting up your Spring AI project](#11-setting-up-your-spring-ai-project)
+   - [application.properties configuration](#12-applicationproperties-configuration)
+   - [Running your first JUnit test](#13-running-your-first-junit-test)
 2. [Using the ChatClient](#using-the-chatclient)
-3. [Logs, entities, and images](#logs-entities-and-images)
-4. [Retrieval Augmented Generation](#retrieval-augmented-generation)
-
+   - [Using the ChatClient to setup a seller Marketplace Agent](#21-using-the-chatclient-to-setup-a-seller-marketplace-agent)
+3. [Chat Memory](#3-chat-memory)
+   - [Using chat memory to keep track of the conversation](#31-using-chat-memory-to-keep-track-of-the-conversation)
+4. [UI](#4-ui)
+   - [Setup a UI to discuss with the seller agent](#41-setup-an-ui-to-discuss-with-the-seller-agent)
+5. [MCP](#5-mcp)
+   - [Retrieve information using MCP](#51-retrieve-information-using-mcp)
+6. [Search Product](#6-search-product)
+   - [Add a MCP tool to be able to search product](#61-add-a-mcp-tools-to-be-able-to-search-product)
+7. [User Management Agent and Router Agent](#7-user-management-agent-and-router-agent)
+   - [Add a user Agent to manage the user requests](#71-add-a-user-agent-to-manage-the-user-requests)
+8. [Negotiating Agent](#8-negotiating-agent)
+   - [Update the seller agent to negotiate the selling of a product](#81-update-the-seller-agent-to-negotiate-the-selling-of-a-product)
+9. [Order Management Agent](#9-order-management-agent)
+   - [Create an Order Management Agent](#91-create-an-order-management-agent)
+10. [RAG using Vector Database](#10-rag-using-vector-database)
+    - [Create an agent to load terms and conditions from a vector in-memory database](#101-create-an-agent-to-load-term-and-conditions-from-a-vector-in-memory-database)
 ---
 
 ### 1. Setting up Spring AI with OpenAI
@@ -145,7 +161,10 @@ public ChatResponse generate(@RequestBody ...) {
 }
 ```
   - Inject the `sellerAgentChatClient` into the controller and use it to send the message to the agent.
-2. Install and run the UI located in  ...(to continue @Jai)
+2. Install and run the UI located in [e-commerce-chat-ui] (e-commerce-chat-ui) folder.
+   - If you are running it locally, make sure to run it in a separate terminal window.
+   - You can use the command `npm install` to install the dependencies and `npm start` to run the UI.
+   - It will be running on port 3000 by default.
 
 #### 5 MCP
 #### 5.1 Retrieve information using MCP
@@ -163,12 +182,19 @@ If you did not complete the section 3.1, please checkout the branch : `solution_
    - The configuration file [application.properties](mcp_server/src/main/resources/application.properties), what is the MCP server port? What is the MCP server endpoint ? is the MCP server sync or async?  What is this option used for `spring.ai.mcp.server.stdio.enabled=true`?
    - The Pom file [pom.xml](mcp_server/pom.xml),  Find and identify what is the `spring-ai-mcp-server` dependency used for ?
    - Check the Product repository [ProductRepository](mcp_server/src/main/java/com/zenika/mcp_server/repository/ProductRepository.java), the data available in the [data.sql](mcp_server/src/main/resources/data.sql) file and the schema in the [schema.sql](mcp_server/src/main/resources/schema.sql). What are the products available in the marketplace?
-3. Define a new Tool in [StoreTools](mcp_server/src/main/java/com/zenika/mcp_server/config/StoreTools.java) to return the list of all products available in the marketplace.
+   - check the [StoreService](mcp_server/src/main/java/com/zenika/mcp_server/service/StoreService.java) class, what is the purpose of this class? What are the methods available in this class?
+   - Run the JUnit test [StoreServiceTests](mcp_server/src/test/java/com/zenika/mcp_server/service/StoreServiceTests.java) `getAllProducts` and check if the test is passing.
+     - What is the purpose of this test? What does it test?
+     - If the test is failing, what is the problem? How can you fix it?
+3. Now we want to expose the products available in the marketplace using a MCP tool.
+   - Define a new Tool in [StoreTools](mcp_server/src/main/java/com/zenika/mcp_server/config/StoreTools.java) to return the list of all products available in the marketplace.
    - The method should be annotated with `@Tool` and should return a `ProductResponseList`.
    - The method should use the `StoreService` to retrieve the products from the database.
    - The `@Tool` annotation should have the following parameters:
      - `name` provide a meaningful name for the tool, for example `getAllItems`
-     - `description` provide a meaningful description for the tool
+     - `description` provide a meaningful description for the tool 
+     - Run the corresponding unit test cases for StoreTools in [StoreToolsTests](mcp_server/src/test/java/com/zenika/mcp_server/config/StoreToolsTests.java) to check if the tool is working as expected.
+
      
    Why is it important to provide a meaningful name and description for the tool?
 4. Update the [McpServerApplication.java](mcp_server/src/main/java/com/zenika/mcp_server/McpServerApplication.java) to expose the `StoreTools` on the MCP server.
@@ -178,17 +204,19 @@ If you did not complete the section 3.1, please checkout the branch : `solution_
 		return ... // Use the StoreTools to create a ToolCallbackProvider
 }
 ```
-4. Back on the Agent project,Update the [AgentConfiguration](handson/src/main/java/com/zenika/handson/configuration/AgentConfiguration.java) to inject the `ToolCallbackProvider toolCallbackProvider` into the `sellerAgentChatClient` bean.
+   - Run the Junit Test [McpServerApplicationTests](mcp_server/src/test/java/com/zenika/mcp_server/McpServerApplicationTests.java) `contextLoads` and check if the test is passing.
+
+5. Back on the Agent project,Update the [AgentConfiguration](handson/src/main/java/com/zenika/handson/configuration/AgentConfiguration.java) to inject the `ToolCallbackProvider toolCallbackProvider` into the `sellerAgentChatClient` bean.
    - Go into the application.properties file and set the following properties:
      - `spring.ai.mcp.client.sse.connections.account-mcp-server.url` Set the URL to the MCP server following the configuration in the [application.properties](mcp_server/src/main/resources/application.properties) file
      - `spring.ai.mcp.client.type` Set the type value following the configuration in the [application.properties](mcp_server/src/main/resources/application.properties) file
      - `spring.ai.mcp.server.stdio.port` Set the port to the MCP server following the configuration in the [application.properties](mcp_server/src/main/resources/application.properties) file
    
-5. Run the MPC server using the command `mvn spring-boot:run` from the `mcp_server` folder.
+6. Run the MPC server using the command `mvn spring-boot:run` from the `mcp_server` folder.
    - If you are using the online IDE, you can run the MCP server by clicking on the "Run" button in the IDE.
    - If you are running it locally, make sure to run it in a separate terminal window.
    - 
-6. Back on the Agent project, Using the UI or a curl command, ask to your agent to list the products available in the marketplace.
+7. Back on the Agent project, Using the UI or a curl command, ask to your agent to list the products available in the marketplace.
     - What is the response? Is it what you expected?
       If you are not using the UI you can use the following curl command:
    - ```bash
@@ -199,19 +227,23 @@ If you did not complete the section 3.1, please checkout the branch : `solution_
      What is the response ?
      How spring AI is able to call the MCP server and retrieve the list of products ?
    
-7. Run the JUnit test [SellerAgentTests](handson/src/test/java/com/zenika/handson/agents/seller/SellerAgentTests.java) `getAllProduct` and check if the test is passing.
+8. Run the JUnit test [SellerAgentTests](handson/src/test/java/com/zenika/handson/agents/seller/SellerAgentTests.java) `getAllProduct` and check if the test is passing.
 
 #### 6 Search product 
 #### 6.1 Add a MCP tools to be able to search product 
 1. Define a new Tool in [StoreTools](mcp_server/src/main/java/com/zenika/mcp_server/config/StoreTools.java) to search a specific product base on user request.
+    - Before defining the tool, complete method searchProducts in [StoreService](mcp_server/src/main/java/com/zenika/mcp_server/service/StoreService.java) class.
     - The method should be annotated with `@Tool` and should return a `ProductResponseList`.
     - The method should use the `StoreService` to search the products from the database.
     - The `@Tool` annotation should have the following parameters:
         - `name` provide a meaningful name for the tool, for example `searchProducts`
         - `description` provide a meaningful description for the tool, for example `Search for products in the store catalog based on a natural language query. including their ID, name, price, and stock and other details`
+    - Run the corresponding unit test cases for StoreTools in [StoreToolsTests](mcp_server/src/test/java/com/zenika/mcp_server/config/StoreToolsTests.java) to check if the tool is working as expected.
+    - Run the JUnit test [StoreServiceTests](mcp_server/src/test/java/com/zenika/mcp_server/service/StoreServiceTests.java) `searchProducts` and check if the test is passing.
+    - 
 2. Execute the Junit test `getLaptopProduct` in [SellerAgentTests](handson/src/test/java/com/zenika/handson/agents/seller/SellerAgentTests.java) and check if the test is passing.
 
-#### 7 User management Agent And Rooter agent
+#### 7 User management Agent And Router agent
 #### 7.1 Add a user Agent to manage the user requests
 We now have an agent that can communicate with the MCP server and retrieve the list of products available in the marketplace.
 
@@ -298,11 +330,16 @@ But we want more, what about an agent that can manage the user requests, like cr
         ```
    - Inside the MPC project let's add the tool to handle users [StoreTools](mcp_server/src/main/java/com/zenika/mcp_server/config/StoreTools.java)
      1. Create a Tool get a user info base on it's id, do check [data.sql](mcp_server/src/main/resources/data.sql) to see the user available in the database.
+        - Before defining the tool, complete method `getUserById` in [StoreService](mcp_server/src/main/java/com/zenika/mcp_server/service/StoreService.java) class.
+        - Define UserRepository in [UserRepository](mcp_server/src/main/java/com/zenika/mcp_server/repository/UserRepository.java) to retrieve the user from the database.
+        - Also define the `UserResponse` class in [UserResponse](mcp_server/src/main/java/com/zenika/mcp_server/model/UserResponse.java) to represent the user information.
         - The method should be annotated with `@Tool` and should return a `UserResponse`.
         - The method should use the `userService` to retrieve the user from the database.
         - The `@Tool` annotation should have the following parameters:
           - `name` provide a meaningful name for the tool, for example `getUserById`
           - `description` provide a meaningful description for the tool, for example `Get user information by user Id. Returns the user's ID, name, and email."`
+        - Run the corresponding unit test cases for StoreTools in [StoreToolsTests](mcp_server/src/test/java/com/zenika/mcp_server/config/StoreToolsTests.java) to check if the tool is working as expected.
+        - Run the JUnit test [StoreServiceTests](mcp_server/src/test/java/com/zenika/mcp_server/service/StoreServiceTests.java) `getUserById` and check if the test is passing.
 
    - Execute the JUnit test [UserAgentTests](handson/src/test/java/com/zenika/handson/agents/userManagement/UserAgentTests.java) and check if the test is passing.
 6. Using the UI or a curl command, ask to your agent to add, update or get user information
@@ -353,17 +390,29 @@ Let's create an agent that will handle the order management to conclude a deal a
 
 2. Inside the MPC project let's add the tool to handle users [StoreTools](mcp_server/src/main/java/com/zenika/mcp_server/config/StoreTools.java)
     1. Create a Tool to place order after a deal is settled
+        - Before defining the tool, complete method `placeOrder` in [StoreService](mcp_server/src/main/java/com/zenika/mcp_server/service/StoreService.java) class.
+        - Complete OrderResponse in [OrderResponse](mcp_server/src/main/java/com/zenika/mcp_server/model/OrderResponse.java) to represent the order information.
+        - Define OrderRepository in [OrderRepository](mcp_server/src/main/java/com/zenika/mcp_server/repository/OrderRepository.java) to save the order in the database.
+        - Define the `OrderRequest` class in [OrderRequest](mcp_server/src/main/java/com/zenika/mcp_server/model/OrderRequest.java) to represent the order request.
+        - Define the 'OrderResponse' class in [OrderResponse](mcp_server/src/main/java/com/zenika/mcp_server/model/OrderResponse.java) to represent the order response.
+        - Follow the TODOs to handle finding the user, product and saving the order in the database. Also make sure to handle the case where the user or product is not found.
+        - Run the unit test for StoreService in [StoreServiceTests](mcp_server/src/test/java/com/zenika/mcp_server/service/StoreServiceTests.java) `placeOrder` to check if the method is working as expected.
         - The method should be annotated with `@Tool` and should return a `OrderResponse`.
         - The method should use the `storeService` to retrieve the user from the database.
         - The `@Tool` annotation should have the following parameters:
             - `name` provide a meaningful name for the tool, for example `placeOrder`
             - `description` provide a meaningful description for the tool, for example `"Place an order for a given product ID and quantity. Use this when the user confirms they want to buy something.Places an order for a client. Use this after a price has been agreed upon. The 'productId' MUST be the numerical ID of the product, which can be found by calling the searchProducts function."`
+        - Run the corresponding unit test cases for StoreTools in [StoreToolsTests](mcp_server/src/test/java/com/zenika/mcp_server/config/StoreToolsTests.java) to check if the tool is working as expected.
+       
     2. Create a Tool get order status
+        - Before defining the tool, complete method `getOrderStatus` in [StoreService](mcp_server/src/main/java/com/zenika/mcp_server/service/StoreService.java) class.
         - The method should be annotated with `@Tool` and should return a `OrderResponse`.
         - The method should use the `storeService` to save the user in the database.
         - The `@Tool` annotation should have the following parameters:
             - `name` provide a meaningful name for the tool, for example `getOrderStatus`
-            - `description` provide a meaningful description for the tool, for example `"Get the current status of an existing order using its specific order ID (e.g., ORD-ABCD).`
+            - `description` provide a meaningful description for the tool, for example `"Get the current status of an existing order using its specific order ID (e.g., 1).`
+        - Run the corresponding unit test cases for StoreTools in [StoreToolsTests](mcp_server/src/test/java/com/zenika/mcp_server/config/StoreToolsTests.java) to check if the tool is working as expected.
+       
 3. Using the UI or a curl command, ask to your agent to place an order or get the order status.
    - If you are not using the UI you can use the following curl command:
    - ```bash
