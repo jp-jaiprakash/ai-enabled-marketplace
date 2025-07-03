@@ -158,7 +158,6 @@ If you did not complete the section 3.1, please checkout the branch : `solution_
      -H "Content-Type: application/json" \
      -d '{"message": "List the products available in the marketplace", "user": "test"}'
      ```
-     [McpApplication](mcp_server/src/main/java/com/zenika/mcp_server/McpApplication.java)
 2. We'll be now having a look at the MCP serveur project, which is located in the [McpApplication](mcp_server) folder.
    Open the [McpApplication](mcp_server) and check the following file: 
    - The configuration file [application.properties](mcp_server/src/main/resources/application.properties), what is the MCP server port? What is the MCP server endpoint ? is the MCP server sync or async?  What is this option used for `spring.ai.mcp.server.stdio.enabled=true`?
