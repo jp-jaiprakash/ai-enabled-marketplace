@@ -1,10 +1,10 @@
 -- USERS
-INSERT INTO users (name, email, password_hash, address) VALUES
-                                                            ('Alice Smith', 'alice@example.com', 'hashedpass1', '123 Apple Street'),
-                                                            ('Bob Johnson', 'bob@example.com', 'hashedpass2', '456 Banana Blvd'),
-                                                            ('Charlie Brown', 'charlie@example.com', 'hashedpass3', '789 Cherry Lane'),
-                                                            ('Diana Prince', 'diana@example.com', 'hashedpass4', '1010 Date Drive'),
-                                                            ('Ethan Hunt', 'ethan@example.com', 'hashedpass5', '1111 Elderberry Rd');
+INSERT INTO users (id,name, email, password_hash, address) VALUES
+                                                            (1,'Alice Smith', 'alice@example.com', 'hashedpass1', '123 Apple Street'),
+                                                            (2,'Bob Johnson', 'bob@example.com', 'hashedpass2', '456 Banana Blvd'),
+                                                            (3,'Charlie Brown', 'charlie@example.com', 'hashedpass3', '789 Cherry Lane'),
+                                                            (4,'Diana Prince', 'diana@example.com', 'hashedpass4', '1010 Date Drive'),
+                                                            (5,'Ethan Hunt', 'ethan@example.com', 'hashedpass5', '1111 Elderberry Rd');
 
 -- PRODUCTS
 INSERT INTO products (name, description, minimum_selling_price, target_selling_price, stock, estimate_delivery_days) VALUES

@@ -14,6 +14,17 @@ public class McpServerApplication {
 		SpringApplication.run(McpServerApplication.class, args);
 	}
 
+	/**
+	 * === WORKSHOP TASK ===
+	 *
+	 * The AI model needs to know which Java functions it's allowed to call.
+	 * Your task is to create a Spring Bean that provides these functions as "Tools".
+	 *
+	 * 1. Use the `MethodToolCallbackProvider.builder()` to start the configuration.
+	 * 2. Register the `sellerAccountTools` object, which contains the functions we want to expose.
+	 * (Hint: Look for a method on the builder called `toolObjects`).
+	 * 3. Build the provider to complete the bean creation.
+	 */
 	@Bean
 	public ToolCallbackProvider tools(StoreTools sellerAccountTools) {
 		return MethodToolCallbackProvider.builder()
