@@ -164,9 +164,9 @@ If you did not complete the section 3.1, please checkout the branch : `solution_
    - The configuration file [application.properties](mcp_server/src/main/resources/application.properties), what is the MCP server port? What is the MCP server endpoint ? is the MCP server sync or async?  What is this option used for `spring.ai.mcp.server.stdio.enabled=true`?
    - The Pom file [pom.xml](mcp_server/pom.xml),  Find and identify what is the `spring-ai-mcp-server` dependency used for ?
    - Check the Product repository [ProductRepository](mcp_server/src/main/java/com/zenika/mcp_server/repository/ProductRepository.java), the data available in the [data.sql](mcp_server/src/main/resources/data.sql) file and the schema in the [schema.sql](mcp_server/src/main/resources/schema.sql). What are the products available in the marketplace?
-3. Define a new Tool in [StoreTools](mcp_server/src/main/java/com/zenika/mcp_server/config/StoreTools.java) to return the list of sll products available in the marketplace.
+3. Define a new Tool in [StoreTools](mcp_server/src/main/java/com/zenika/mcp_server/config/StoreTools.java) to return the list of all products available in the marketplace.
    - The method should be annotated with `@Tool` and should return a `ProductResponseList`.
-   - The method should use the `ProductRepository` to retrieve the products from the database.
+   - The method should use the `StoreService` to retrieve the products from the database.
    - The `@Tool` annotation should have the following parameters:
      - `name` provide a meaningful name for the tool, for example `getAllItems`
      - `description` provide a meaningful description for the tool
@@ -202,8 +202,18 @@ If you did not complete the section 3.1, please checkout the branch : `solution_
    
 7. Run the JUnit test [SellerAgentTests](handson/src/test/java/com/zenika/handson/agents/seller/SellerAgentTests.java) `getAllProduct` and check if the test is passing.
 
-#### 6 User management Agent And Rooter agent
-#### 6.1 Add a user Agent to manage the user requests
+#### 6 Search product 
+#### 6.1 Add a MCP tools to be able to search product 
+1. Define a new Tool in [StoreTools](mcp_server/src/main/java/com/zenika/mcp_server/config/StoreTools.java) to search a specific product base on user request.
+    - The method should be annotated with `@Tool` and should return a `ProductResponseList`.
+    - The method should use the `StoreService` to search the products from the database.
+    - The `@Tool` annotation should have the following parameters:
+        - `name` provide a meaningful name for the tool, for example `searchProducts`
+        - `description` provide a meaningful description for the tool, for example `Search for products in the store catalog based on a natural language query. including their ID, name, price, and stock and other details`
+2. Execute the Junit test `getLaptopProduct` in [SellerAgentTests](handson/src/test/java/com/zenika/handson/agents/seller/SellerAgentTests.java) and check if the test is passing.
+
+#### 7 User management Agent And Rooter agent
+#### 7.1 Add a user Agent to manage the user requests
 We now have an agent that can communicate with the MCP server and retrieve the list of products available in the marketplace.
 
 But we want more, what about an agent that can manage the user requests, like creating a new user, updating a user, deleting a user, etc.
@@ -288,30 +298,76 @@ But we want more, what about an agent that can manage the user requests, like cr
             }
         ```
    - Inside the MPC project let's add the tool to handle users [StoreTools](mcp_server/src/main/java/com/zenika/mcp_server/config/StoreTools.java)
-     1. Create a Tool get a user info base on it's email
+     1. Create a Tool get a user info base on it's id, do check [data.sql](mcp_server/src/main/resources/data.sql) to see the user available in the database.
         - The method should be annotated with `@Tool` and should return a `UserResponse`.
-        - The method should use the `UserRepository` to retrieve the user from the database.
+        - The method should use the `userService` to retrieve the user from the database.
         - The `@Tool` annotation should have the following parameters:
           - `name` provide a meaningful name for the tool, for example `getUserById`
           - `description` provide a meaningful description for the tool, for example `Get user information by user Id. Returns the user's ID, name, and email."`
-     2. Create a Tool to create a new user
-        - The method should be annotated with `@Tool` and should return a `UserResponse`.
-        - The method should use the `UserRepository` to save the user in the database.
-        - The `@Tool` annotation should have the following parameters:
-          - `name` provide a meaningful name for the tool, for example `createUser`
-          - `description` provide a meaningful description for the tool, for example `Create a new user. Returns the created user's ID, name, and email."`
-     3. Create a Tool to update an existing user
-        - The method should be annotated with `@Tool` and should return a `UserResponse`.
-        - The method should use the `UserRepository` to update the user in the database.
-        - The `@Tool` annotation should have the following parameters:
-          - `name` provide a meaningful name for the tool, for example `updateUser`
-          - `description` provide a meaningful description for the tool, for example `Update an existing user. Returns the updated user's ID, name, and email."`
 
    - Execute the JUnit test [UserAgentTests](handson/src/test/java/com/zenika/handson/agents/userManagement/UserAgentTests.java) and check if the test is passing.
 6. Using the UI or a curl command, ask to your agent to add, update or get user information
 
-#### 7 RAG using vector Database
-#### 7.1 Create an agent to load term and conditions from a vector in memory database
+#### 8 Negotiating Agent
+#### 8.1 Update the seller agent to negotiate the selling of a product
+We now have an seller agent that can list products, search product, but what about negotiating the selling of a product like a pro.
+1. Update the sellerAgentChatClient description prompt in [AgentConfiguration](handson/src/main/java/com/zenika/handson/configuration/AgentConfiguration.java) and describe how our agent should bargain the selling.
+   - Here is an example of prompt you can use but try to do it by yourself
+   - ```java
+            @Bean
+            @Description("""
+        This Chat should be use to handle inquiries about listing products,
+         searching products, negotiating prices
+         and settling the deal at a specific price with the client.
+         Follow this specific negotiation strategy:
+                 1.  **Starting Offer:** Always start your negotiation with an offer that is close to the 'targetSellingPrice'.
+                 2.  **Handle Counter-Offers:** When a user makes a counter-offer, do not immediately accept it or jump to your lowest price.
+                 3.  **Gradual Concessions:** Instead, aim for at least **two to three rounds of negotiation**. For each round, make a small concession, moving your offer slightly lower towards the user's price.
+                 4.  **Charm and Justify:** With each new counter-offer you make, you must 'charm the client' by justifying the price. Highlight a specific, valuable feature of the product. For example, "I can't quite do $850, but I can meet you at $920. At that price, you're getting the state-of-the-art processor which makes it a fantastic deal."
+                 5.  **Know Your Limit:** Your absolute floor is the 'minimumSellingPrice'. Under no circumstances should you offer or accept a price below this value. Never reveal the 'minimumSellingPrice' to the user.
+                 6.  **Negotiation should be done in a friendly manner, and the agent should try to charm the client.
+        """)
+            ChatClient negotiationChatClient(...)
+        ```
+2. Using the UI or a curl command, try to negotiate a product with your agent .
+      If you are not using the UI you can use the following curl command:
+    - ```bash
+     curl -X POST http://localhost:8080/api/marketplace/chat \
+     -H "Content-Type: application/json" \
+     -d '{"message": "List the products available in the marketplace", "user": "test"}'
+     ```
+   
+#### 9 Order Management Agent
+#### 9.1 Create an Order Management Agent
+Let's create an agent that will handle the order management to conclude a deal an get the order status.
+- Inside [AgentConfiguration](handson/src/main/java/com/zenika/handson/configuration/AgentConfiguration.java) add a new ChatClient `@Bean` called `orderManagementChatClient` that will be used to manage the order related requests.
+  - Here is an example of a prompt you can use but try to do it by yourself:
+  ```java
+            @Bean
+    @Description("""
+            This Chat should be use to handle orders management only after the deal is settled at a agreed price for a product.
+            This Chat should be able to handle inquiries about order status, shipping details, and any issues related to the order.
+            This Chat will also be in charge of adding the order to the database.
+            """)
+    ChatClient orderManagementChatClient(...)
+  ```
+
+- Inside the MPC project let's add the tool to handle users [StoreTools](mcp_server/src/main/java/com/zenika/mcp_server/config/StoreTools.java)
+    1. Create a Tool to place order after a deal is settled
+        - The method should be annotated with `@Tool` and should return a `OrderResponse`.
+        - The method should use the `storeService` to retrieve the user from the database.
+        - The `@Tool` annotation should have the following parameters:
+            - `name` provide a meaningful name for the tool, for example `placeOrder`
+            - `description` provide a meaningful description for the tool, for example `"Place an order for a given product ID and quantity. Use this when the user confirms they want to buy something.Places an order for a client. Use this after a price has been agreed upon. The 'productId' MUST be the numerical ID of the product, which can be found by calling the searchProducts function."`
+    2. Create a Tool get order status
+        - The method should be annotated with `@Tool` and should return a `OrderResponse`.
+        - The method should use the `storeService` to save the user in the database.
+        - The `@Tool` annotation should have the following parameters:
+            - `name` provide a meaningful name for the tool, for example `getOrderStatus`
+            - `description` provide a meaningful description for the tool, for example `"Get the current status of an existing order using its specific order ID (e.g., ORD-ABCD).`
+
+#### 10 RAG using vector Database
+#### 10.1 Create an agent to load term and conditions from a vector in memory database
 The term an Condition is stored in a file describing the terms and conditions of the marketplace,
 we want to be able ask questions about the term and conditions and get the answer from the file.
 1. Add the dependency `spring-ai-vector-store-in-memory` in the [pom.xml](handson/pom.xml) file.
@@ -344,29 +400,6 @@ we want to be able ask questions about the term and conditions and get the answe
     ```
 4.
 
-
-#### 7 Prompting
-#### 7.1 Convert my agent to a professional seller agent with prompting
-If you did not complete the section 6, please checkout the branch : `solution_6.?`
-
-We now have an agent that can communicate with the MCP server and retrieve the list of products available in the marketplace.
-However, we want to make our agent more professional and be able to negotiate the selling of a product like a pro.
-
-
-- Inside the package `com.spring.book`, create a new Java record called Book. It should have 2 attributes: author and title.
-- Inside [BookRecommendationService](src/main/java/com/spring/book/BookRecommendationService.java), add a method called `findFictionBook`. It should use a ChatClient instance in order to ask for the best fiction book in year 2023 and return the response as a Book entity.
-- Inside BookRecommendationServiceTest, add a method `shouldFindFictionBook`. It should call BookRecommendationService.findFictionBook(), log the result, and assert that the result is not empty.
-- Run `BookRecommendationServiceTest` and double-check that the request to OpenAI provides JSON Schema guidelines. (Uncomment the @Configuration in [HttpLoggingConfiguration](src/main/java/com/spring/config/HttpLoggingConfiguration.java))
-
-  (For the online IDE execute in the shell `mvn -Dtest=BookRecommendationServiceTest#shouldFindFictionBook test` )
-
-
-If you are able to see the response in the logs, you have successfully mapped your response to an entity, congratulations!
-
-
-
-### 4. (BONUS)
-- Create an Agent to place order a product in the marketplace.
 
 
 

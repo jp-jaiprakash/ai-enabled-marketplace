@@ -65,7 +65,7 @@ public class AgentConfiguration {
     @Description("""
             This Chat should be use to handle orders management only after the deal is settled at a agreed price for a product.
             This Chat should be able to handle inquiries about order status, shipping details, and any issues related to the order.
-            This Chat will also be in charge of adding the order to the database or updating the order.
+            This Chat will also be in charge of adding the order to the database.
             """)
     ChatClient orderManagementChatClient(ChatClient.Builder chatClientBuilder,  PromptChatMemoryAdvisor defaultChatMemoryAdvisor, ToolCallbackProvider toolCallbackProvider ) {
         return chatClientBuilder

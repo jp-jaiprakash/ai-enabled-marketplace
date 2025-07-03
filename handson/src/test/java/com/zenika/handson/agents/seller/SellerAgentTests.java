@@ -76,4 +76,23 @@ class SellerAgentTests {
 	}
 
 
+	@Test
+	void getLaptopProduct() {
+		/*
+		  set your name in the string variable `yourName`
+		 */
+		String yourName = "John Doe"; // Replace with your name
+		var message = "My name is " + yourName + " my customer number is 101. Can you show me the laptop products? and return the response in JSON format, only the JSON, nothing else.";
+
+		String responseOne = sellerAgentChatClient.prompt()
+				.user(message)
+				.call()
+				.content();
+		logger.info(responseOne);
+		String expectedResponse = """
+				{"products":[{"id":1,"name":"Laptop","price":999.99,"stock":10,"description":"High-performance laptop"}]}""";
+		assertThat(responseOne).isEqualTo(expectedResponse);
+	}
+
+
 }
