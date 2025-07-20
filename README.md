@@ -1,6 +1,7 @@
 # ZeniMarketplaceAgent
 
 Flow of the project!![mcp-clazz.jpg](mcp-clazz.jpg)
+Screenshot of start of project !![nightclazz-demo](nightclazz-demo.png)
 
 # Spring AI - Lab Instructions
 
